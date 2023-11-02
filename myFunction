@@ -1,0 +1,64 @@
+function myFunction() {
+// GoogleーID
+var calId = "xxxxxxxxxxxxx"; // รหัสปฏิทิน ใส่ตรงนี้
+// LINE Notify
+var key = "xxxxxxxxxxxxxxxx"; // Line Token 
+
+var url = "https://notify-api.line.me/api/notify";
+
+var cal = CalendarApp.getCalendarById(calId);
+var now = new Date();
+var tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1); //แก้ไขตัวเลขดังนี้ 0 คือวันที่ปัจจุบัน 1 คือวันพรุ่งนี้ ถ้าใส่ 1 Trickker ต้องมากกว่า 13.00 น. แนะนำคือ 21.00 น
+
+// google รับตารางเวลาของวันพรุ่งนี้จากปฏิทินเป็นอาร์เรย์
+var tomorrowEvent = cal.getEventsForDay(tomorrow);
+
+// LINE Notify ข้อความที่จะส่งไป
+var msg = "";
+// เมื่อไม่มีแผน
+
+  
+if(tomorrowEvent.length === 0){
+msg = "วันพรุ่งนี้ไม่มีกิจกรรมครับ";
+}
+// เมื่อมีกิจกรรม
+
+else{
+msg += "แจ้งกิจกรรมของวันพรุ่งนี้ มีทั้งหมด " + String(tomorrowEvent.length) + " กิจกรรมครับ\n\n";
+msg += allPlanToMsg(tomorrowEvent) ;
+}
+
+var jsonData = {
+message: msg  
+} 
+
+var options =
+{
+"method" : "post",
+"contentType" : "application/x-www-form-urlencoded",
+"payload" : jsonData,
+"headers": {"Authorization": "Bearer " + key}
+};
+
+var res = UrlFetchApp.fetch(url, options);
+}
+
+// ส่งคืนอาร์เรย์ของเหตุการณ์เป็นข้อความ
+function allPlanToMsg(events/* array */){
+var msg = "";
+events.forEach( function(event, index){
+var title = event.getTitle();
+var des = event.getDescription();
+
+var start = event.getStartTime().getHours() + ":" + ("0" + event.getStartTime().getMinutes()).slice(-2);
+
+var end = event.getEndTime().getHours() + ":" + ("0" + event.getEndTime().getMinutes()).slice(-2);
+// เมื่อถึงกำหนดวันทั้งวัน
+if( event.isAllDayEvent() ){
+msg += String(index + 1) +") "  + "เวลา : "+ " ทั้งวัน" +"\n เรื่อง : "+ title   +"\n - - - - -\n\n";
+return;
+}
+msg += String(index + 1) +") "  + "เวลา : "+ start + " - " + end +" น."+"\n\nเรื่อง : "+ title + "\n - - - - -\n\n";
+} ) ;
+return msg ;
+} 
